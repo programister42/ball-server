@@ -1,11 +1,16 @@
+const {createServer} = require('http')
 const {Server} = require('socket.io')
 
-const port = process.env.PORT || 3000
+const port = parseInt(process.env.PORT) || 3000
+console.log(`Port ${port}`)
 
-const io = new Server(parseInt(port), {
+// Create a new HTTP server with the port number
+// const httpServer = createServer();
+
+const io = new Server(port, {
     cors: {
         origin: '*',
-		methods: ['GET', 'POST'],
+        methods: ['GET', 'POST'],
     },
 })
 
@@ -30,7 +35,7 @@ io.on('connection', (socket) => {
 
         if (!players.length) return
         socket.emit('onlinePlayersUpdate', players)
-		console.log(onlinePlayers)
+        console.log(onlinePlayers)
     }, serverTick)
 
     socket.on('disconnect', _ => {
