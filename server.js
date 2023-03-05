@@ -1,11 +1,6 @@
-const {createServer} = require('http')
 const {Server} = require('socket.io')
 
 const port = parseInt(process.env.PORT) || 3000
-console.log(`Port ${port}`)
-
-// Create a new HTTP server with the port number
-// const httpServer = createServer();
 
 const io = new Server(port, {
     cors: {
@@ -14,31 +9,22 @@ const io = new Server(port, {
     },
 })
 
-const serverTick = 1000 / 30;
-const onlinePlayers = new Map()
+const serverTick = 1000 / 60;
+const players = new Map()
 
 io.on('connection', (socket) => {
-    socket.emit('id', socket.id)
 
     socket.on('updatePlayer', (player) => {
-        onlinePlayers.set(socket.id, player)
+        players.set(player.id, player)
     });
 
     setInterval(_ => {
-        const players = []
+        for (const [id, player] of players)
+            if (Date.now() - player.lastUpdate > 60 * 1000)
+                players.delete(id)
 
-        for (const [id, player] of onlinePlayers) {
-            if (id === socket.id) continue
+        if (!players.size) return
 
-            players.push(player)
-        }
-
-        if (!players.length) return
-        socket.emit('onlinePlayersUpdate', players)
-        console.log(onlinePlayers)
+        socket.emit('onlinePlayersUpdate', [...players.values()])
     }, serverTick)
-
-    socket.on('disconnect', _ => {
-        onlinePlayers.delete(socket.id)
-    })
 })
