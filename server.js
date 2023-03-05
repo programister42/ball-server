@@ -1,32 +1,37 @@
-const { Server } = require("socket.io");
-
-const serverTick = 1000 / 30;
-const usersCoordinates = new Map();
+const {Server} = require('socket.io')
 
 const io = new Server(3000, {
-	cors: {
-		origin: "*",
-		methods: ["GET", "POST"],
-	},
-});
+    cors: {
+        origin: '*',
+		methods: ['GET', 'POST'],
+    },
+})
 
-io.on("connection", (socket) => {
-	socket.emit("id", socket.id);
+const serverTick = 1000 / 30;
+const onlinePlayers = new Map()
 
-	socket.on("user coordinates", ({ id, coordinates }) => {
-		usersCoordinates.set(id, coordinates);
-	});
+io.on('connection', (socket) => {
+    socket.emit('id', socket.id)
 
-	setInterval(() => {
-		let users = [];
-		for (const [id, coordinates] of usersCoordinates) {
-			users.push({ id, coordinates });
-		}
-		socket.emit("users coordinates", users);
-		console.log(users);
-	}, serverTick);
+    socket.on('updatePlayer', (player) => {
+        onlinePlayers.set(socket.id, player)
+    });
 
-	socket.on("disconnect", () => {
-		usersCoordinates.delete(socket.id);
-	});
-});
+    setInterval(_ => {
+        const players = []
+
+        for (const [id, player] of onlinePlayers) {
+            if (id === socket.id) continue
+
+            players.push(player)
+        }
+
+        if (!players.length) return
+        socket.emit('onlinePlayersUpdate', players)
+		console.log(onlinePlayers)
+    }, serverTick)
+
+    socket.on('disconnect', _ => {
+        onlinePlayers.delete(socket.id)
+    })
+})
