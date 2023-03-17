@@ -9,14 +9,31 @@ const io = new Server(port, {
     },
 })
 
-const serverTick = 1000 / 60;
+const serverTick = 1000 / 60
+const defaultSize = 51
 const players = new Map()
 
-io.on('connection', (socket) => {
+const addApple = _ => {
+    const x = Math.floor(Math.random() * defaultSize)
+    const y = Math.floor(Math.random() * defaultSize)
+    return {x, y}
+}
 
-    socket.on('updatePlayer', (player) => {
+let currentApple = addApple()
+
+io.on('connection', socket => {
+
+    socket.on('updatePlayer', player => {
+        if (
+            player.segments[0].x === currentApple.x
+            && player.segments[0].y === currentApple.y
+        ) {
+            currentApple = addApple()
+            socket.emit('appleEaten', player.id)
+        }
+
         players.set(player.id, player)
-    });
+    })
 
     setInterval(_ => {
         for (const [id, player] of players)
@@ -25,6 +42,10 @@ io.on('connection', (socket) => {
 
         if (!players.size) return
 
-        socket.emit('onlinePlayersUpdate', [...players.values()])
+        socket.emit('serverUpdate', {
+            players: [...players.values()],
+            apple: currentApple,
+        })
     }, serverTick)
+
 })
