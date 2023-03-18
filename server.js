@@ -14,9 +14,15 @@ const defaultSize = 51
 const players = new Map()
 
 const addApple = _ => {
-    const x = Math.floor(Math.random() * defaultSize)
-    const y = Math.floor(Math.random() * defaultSize)
-    return {x, y}
+    const blockedCoordinates = [...players.values()].map(player => player.segments).flat()
+    const apple = { x: 0, y: 0 }
+
+    do {
+        apple.x = Math.floor(Math.random() * defaultSize)
+        apple.y = Math.floor(Math.random() * defaultSize)
+    } while (blockedCoordinates.some(({x, y}) => x === apple.x && y === apple.y))
+
+    return apple
 }
 
 const checkCollision = (object, anotherObject) => object.x === anotherObject.x && object.y === anotherObject.y
