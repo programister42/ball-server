@@ -19,17 +19,27 @@ const addApple = _ => {
     return {x, y}
 }
 
+const checkCollision = (object, anotherObject) => object.x === anotherObject.x && object.y === anotherObject.y
+
 let currentApple = addApple()
 
 io.on('connection', socket => {
 
     socket.on('updatePlayer', player => {
-        if (
-            player.segments[0].x === currentApple.x
-            && player.segments[0].y === currentApple.y
-        ) {
+        if (checkCollision(player.segments[0], currentApple)) {
             currentApple = addApple()
             socket.emit('appleEaten', player.id)
+        }
+
+        for (const [id, anotherPlayer] of players) {
+            anotherPlayer.segments.forEach((segment, index) => {
+                if (
+                    index === 0 ||
+                    !checkCollision(player.segments[0], segment)
+                ) return
+
+                socket.emit('playerDied', player.id)
+            })
         }
 
         players.set(player.id, player)
